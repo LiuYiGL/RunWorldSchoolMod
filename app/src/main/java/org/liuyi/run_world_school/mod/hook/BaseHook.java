@@ -44,6 +44,8 @@ public abstract class BaseHook {
 
     public abstract Consumer<HookFactory> hookFactoryConsumer();
 
+    public abstract String getPrefKey();
+
     public String getClassName() {
         return this.getClass().getSimpleName();
     }

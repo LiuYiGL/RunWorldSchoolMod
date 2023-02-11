@@ -8,6 +8,8 @@ import com.github.kyuubiran.ezxhelper.HookFactory;
 import com.github.kyuubiran.ezxhelper.Log;
 import com.github.kyuubiran.ezxhelper.finders.MethodFinder;
 
+import org.liuyi.run_world_school.mod.hook.base.SettingActivityHook;
+
 import java.lang.reflect.Method;
 import java.util.Objects;
 
@@ -29,6 +31,8 @@ public class MainHook implements IXposedHookLoadPackage, IXposedHookZygoteInit {
                 EzXHelper.setLogTag(TAG);
                 EzXHelper.setToastTag(TAG);
                 initAppContext();
+
+                SettingActivityHook.INSTANCE.init().hook();
             } catch (Exception e) {
                 Log.e(e, "Use mod is failed");
             }
@@ -40,6 +44,9 @@ public class MainHook implements IXposedHookLoadPackage, IXposedHookZygoteInit {
         EzXHelper.initZygote(startupParam);
     }
 
+    /**
+     * 初始化获取AppContext
+     */
     private void initAppContext() {
         Method attach = MethodFinder.fromClass(Application.class).filterByName("attach").first();
         HookFactory.createMethodHook(attach, hookFactory -> {
