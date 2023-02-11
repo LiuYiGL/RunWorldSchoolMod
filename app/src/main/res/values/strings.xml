@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">RunWorldSchoolMod</string>
+    <string name="xposed_desc">懒得描述</string>
+    <string name="target_package_name">com.zjwh.android_wh_physicalfitness</string>
 </resources>
