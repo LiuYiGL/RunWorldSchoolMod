@@ -1,10 +1,12 @@
 package org.liuyi.run_world_school.mod.hook.base;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.github.kyuubiran.ezxhelper.ClassUtils;
+import com.github.kyuubiran.ezxhelper.EzXHelper;
 import com.github.kyuubiran.ezxhelper.HookFactory;
 import com.github.kyuubiran.ezxhelper.Log;
 import com.github.kyuubiran.ezxhelper.finders.MethodFinder;
@@ -50,7 +52,13 @@ public class SettingActivityHook extends BaseHook {
                     // 新建一个item
                     ViewHelper viewHelper = new ViewHelper(activity);
                     TextView tvRunAssist = viewHelper.getArrowItem(0, "运动辅助");
-
+                    tvRunAssist.setOnClickListener(v -> {
+                        Intent intent = new Intent();
+                        intent.setClassName(EzXHelper.getAppContext().getPackageName(),
+                                "com.zjwh.android_wh_physicalfitness.activity.mine.AboutUsActivity");
+                        intent.putExtra("custom", "AssistSetting");
+                        activity.startActivity(intent);
+                    });
 
                     // 添加进布局
                     linearLayout.addView(tvRunAssist, 0);
