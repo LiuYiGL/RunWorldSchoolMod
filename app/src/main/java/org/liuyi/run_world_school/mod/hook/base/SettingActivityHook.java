@@ -50,7 +50,7 @@ public class SettingActivityHook extends BaseHook {
                     LinearLayout linearLayout = (LinearLayout) Objects.requireNonNull(ViewUtils.INSTANCE.findViewByIdName(activity, ViewHelper.arrowItemIdName)).getParent();
 
                     // 新建一个item
-                    ViewHelper viewHelper = new ViewHelper(activity);
+                    ViewHelper viewHelper = ViewHelper.newInstance(activity);
                     TextView tvRunAssist = viewHelper.getArrowItem(0, "运动辅助");
                     tvRunAssist.setOnClickListener(v -> {
                         Intent intent = new Intent();

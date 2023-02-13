@@ -8,7 +8,6 @@ import com.github.kyuubiran.ezxhelper.HookFactory;
 import com.github.kyuubiran.ezxhelper.Log;
 import com.github.kyuubiran.ezxhelper.finders.MethodFinder;
 
-import org.liuyi.run_world_school.mod.fake.ActivityFake;
 import org.liuyi.run_world_school.mod.fake.AssistSettingActivityFake;
 import org.liuyi.run_world_school.mod.hook.BaseHook;
 
@@ -19,7 +18,6 @@ import java.util.function.Consumer;
 public class AboutUsActivityHook extends BaseHook {
 
     public static BaseHook INSTANCE = new AboutUsActivityHook();
-    public ActivityFake activityFake;
     private static final String targetClazzName = "com.zjwh.android_wh_physicalfitness.activity.mine.AboutUsActivity";
 
     @Override
@@ -46,10 +44,7 @@ public class AboutUsActivityHook extends BaseHook {
                     Intent intent = activity.getIntent();
                     String custom = intent.getStringExtra("custom");
                     if (Objects.equals(custom, "AssistSetting")) {
-                        if (activityFake == null) {
-                            activityFake = new AssistSettingActivityFake();
-                        }
-                        activityFake.fakeActivity(activity);
+                        AssistSettingActivityFake.INSTANCE.fakeActivity(activity);
                     }
                 }
             });

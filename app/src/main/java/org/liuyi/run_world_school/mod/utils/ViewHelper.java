@@ -2,6 +2,7 @@ package org.liuyi.run_world_school.mod.utils;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.XmlResourceParser;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,78 +10,148 @@ import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
 
-import com.github.kyuubiran.ezxhelper.EzXHelper;
 import com.github.kyuubiran.ezxhelper.Log;
 import com.github.kyuubiran.ezxhelper.misc.ViewUtils;
 
+import java.util.ArrayList;
 import java.util.Objects;
+
+import de.robv.android.xposed.XposedHelpers;
 
 @SuppressLint("DiscouragedApi")
 public class ViewHelper {
 
     private LayoutInflater layoutInflater;
-    public static final String activity_setting_layout_name = "activity_setting";
-    public static final String account_setting_layout_name = "account_setting";
+    private Context context;
+    private static boolean isInit;
+    private static final String activity_setting_layout_name = "activity_setting";
+    private static final String activity_account_setting_layout_name = "activity_account_setting";
     public static final String arrowItemIdName = "tvAccountSetting";
+    private static Object activitySettingXmlBlockObj;
+    private static Object activityAccountSettingXmlBlockObj;
+
+    private static final ArrayList<TextView> arrowItemList = new ArrayList<>();
+    private static final ArrayList<View> lineItemList = new ArrayList<>();
+    private static final ArrayList<LinearLayout> switchItemList = new ArrayList<>();
+    private static final ArrayList<LinearLayout> categoryItemList = new ArrayList<>();
+    private static final ArrayList<LinearLayout> arrowAndStateItemItemList = new ArrayList<>();
+    private static final ArrayList<TextView> sectionItemList = new ArrayList<>();
 
 
-    public ViewHelper(Context context) {
-        layoutInflater = LayoutInflater.from(context);
+    private ViewHelper() {
+    }
+
+    public static ViewHelper newInstance(Context context) {
+        ViewHelper viewHelper = new ViewHelper();
+        viewHelper.layoutInflater = LayoutInflater.from(context);
+        viewHelper.context = context;
+
+        if (!isInit) {
+            int id1 = ViewUtils.getIdByName(activity_setting_layout_name, "layout", context);
+            XmlResourceParser layout1 = context.getResources().getLayout(id1);
+            activitySettingXmlBlockObj = XposedHelpers.getObjectField(layout1, "mBlock");
+
+            int id2 = ViewUtils.getIdByName(activity_account_setting_layout_name, "layout", context);
+            XmlResourceParser layout2 = context.getResources().getLayout(id2);
+            activityAccountSettingXmlBlockObj = XposedHelpers.getObjectField(layout2, "mBlock");
+            isInit = true;
+        }
+        return viewHelper;
+    }
+
+    private XmlResourceParser getXmlResourceParser(Object obj) {
+        if (obj.getClass().getName().equals("android.content.res.XmlBlock")) {
+            return (XmlResourceParser) XposedHelpers.callMethod(obj, "newParser");
+        }
+        return null;
+    }
+
+    private void divideViewFromActivitySettingLayout() {
+        try {
+            ViewGroup layoutView = (ViewGroup) layoutInflater.inflate(getXmlResourceParser(activitySettingXmlBlockObj), null);
+            ViewUtils.INSTANCE.findAllViewsByCondition(layoutView, view -> {
+                        if (view instanceof TextView) {
+                            return ((TextView) view).getCompoundDrawables()[2] != null;
+                        }
+                        return false;
+                    }).stream().map(view -> (TextView) view)
+                    .peek(ViewHelper::removeParent)
+                    .peek(ViewHelper::initView)
+                    .forEach(arrowItemList::add);
+
+            ViewUtils.INSTANCE.findAllViewsByCondition(layoutView, view -> view.getClass().equals(View.class)
+                            && view.getId() == -1)
+                    .stream().peek(ViewHelper::removeParent)
+                    .peek(ViewHelper::initView)
+                    .forEach(lineItemList::add);
+
+            ViewUtils.INSTANCE.findAllViewsByCondition(layoutView, view -> view instanceof LinearLayout
+                            && ((LinearLayout) view).getChildAt(1) instanceof Switch)
+                    .stream().map(view -> (LinearLayout) view)
+                    .peek(ViewHelper::removeParent)
+                    .peek(ViewHelper::initView)
+                    .forEach(switchItemList::add);
+
+        } catch (Exception e) {
+            Log.e(e, "");
+        }
     }
 
     public TextView getArrowItem(int id, String text) {
-        TextView res = null;
+        TextView res;
         try {
-            View view = getLayoutView(activity_setting_layout_name);
-            assert view != null;
-            res = (TextView) ViewUtils.INSTANCE.findViewByIdName(view, arrowItemIdName);
-            assert res != null;
-            res.setId(id);
-            res.setText(text);
-            res.setClickable(true);
+            if (arrowItemList.isEmpty()) {
+                divideViewFromActivitySettingLayout();
+            }
+            res = arrowItemList.remove(0);
             removeParent(res);
         } catch (Exception e) {
             Log.e(e, "fail to getArrowItem");
+            res = new TextView(context);
         }
+        res.setId(id);
+        res.setText(text);
+        res.setClickable(true);
         return res;
     }
 
     public View getLineItem() {
-        View res = null;
+        View res;
         try {
-            View view = getLayoutView(activity_setting_layout_name);
-            assert view != null;
-            LinearLayout parent = (LinearLayout) (Objects.requireNonNull(ViewUtils.INSTANCE.findViewByIdName(view, arrowItemIdName)).getParent());
-            res = parent.getChildAt(1);
-            removeParent(res);
+            if (lineItemList.isEmpty()) {
+                divideViewFromActivitySettingLayout();
+            }
+            res = lineItemList.remove(0);
         } catch (Exception e) {
             Log.e(e, "fail to getLineItem");
+            res = new View(context);
         }
         return res;
     }
 
     @SuppressLint("UseSwitchCompatOrMaterialCode")
-    public LinearLayout getSwitchItem(int id, String text) {
-        LinearLayout res = null;
+    public synchronized LinearLayout getSwitchItem(int id, String text) {
+        LinearLayout res;
         try {
-            View view = getLayoutView(activity_setting_layout_name);
-            assert view != null;
-            res = (LinearLayout) Objects.requireNonNull(ViewUtils.INSTANCE.findViewByIdName(view, "tv_notify_server")).getParent();
+            if (switchItemList.isEmpty()) {
+                divideViewFromActivitySettingLayout();
+            }
+            res = switchItemList.remove(0);
             TextView tvTitle = (TextView) res.getChildAt(0);
             Switch aSwitch = (Switch) res.getChildAt(1);
             tvTitle.setText(text);
             aSwitch.setId(id);
-            removeParent(res);
         } catch (Exception e) {
             Log.e(e, "fail to getSwitchItem");
+            res = new LinearLayout(context);
         }
         return res;
     }
 
-    public LinearLayout getCategoryItem() {
+    public synchronized LinearLayout getCategoryItem() {
         LinearLayout res = null;
         try {
-            View view = getLayoutView(activity_setting_layout_name);
+            View view = layoutInflater.inflate(getXmlResourceParser(activitySettingXmlBlockObj), null);
             assert view != null;
             res = (LinearLayout) (Objects.requireNonNull(ViewUtils.INSTANCE.findViewByIdName(view, arrowItemIdName)).getParent());
             res.removeAllViews();
@@ -91,22 +162,23 @@ public class ViewHelper {
         return res;
     }
 
-    public LinearLayout getArrowAndStateItem(int titleId, String titleText, int stateId, String stateText) {
+    public synchronized LinearLayout getArrowAndStateItem(int titleId, String titleText, int stateId, String stateText) {
         LinearLayout res = null;
         try {
-            View view = getLayoutView(account_setting_layout_name);
+            View view = layoutInflater.inflate(getXmlResourceParser(activityAccountSettingXmlBlockObj), null);
             assert view != null;
             res = (LinearLayout) ViewUtils.INSTANCE.findViewByIdName(view, "llWX");
             assert res != null;
             TextView tvTitle = (TextView) res.getChildAt(0);
             TextView tvState = (TextView) res.getChildAt(1);
 
-            tvTitle.setId(titleId);
             tvTitle.setText(titleText);
             tvState.setId(stateId);
             tvState.setText(stateText);
 
-            res.setId(0);
+            res.setId(titleId);
+            ViewGroup.LayoutParams params = arrowItemList.get(0).getLayoutParams();
+            res.setLayoutParams(params);
             removeParent(res);
         } catch (Exception e) {
             Log.e(e, "fail to getArrowAndStateItem");
@@ -114,16 +186,24 @@ public class ViewHelper {
         return res;
     }
 
-    public TextView getSectionItem(int id, String text) {
+    public synchronized TextView getSectionItem(int id, String text) {
         TextView res = null;
         try {
-            View layoutView = getLayoutView(account_setting_layout_name);
+            View layoutView = layoutInflater.inflate(getXmlResourceParser(activityAccountSettingXmlBlockObj), null);
             assert layoutView != null;
             res = ViewUtils.INSTANCE.findViewByConditionAs((ViewGroup) layoutView,
-                    view -> view instanceof TextView && ((TextView) view).getText() == "账号绑定");
+                    view -> {
+                        if (view instanceof TextView) {
+                            String s = (String) ((TextView) view).getText();
+                            return s.equals("账号绑定");
+                        }
+                        return false;
+                    });
             assert res != null;
             res.setId(id);
             res.setText(text);
+            ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) res.getLayoutParams();
+            params.setMargins(0, params.topMargin / 2, 0, params.bottomMargin / 2);
             removeParent(res);
         } catch (Exception e) {
             Log.e(e, "fail to getSectionItem");
@@ -131,33 +211,33 @@ public class ViewHelper {
         return res;
     }
 
-
-    /**
-     * 实例化一个布局
-     *
-     * @param layoutName
-     * @return
-     */
-    private View getLayoutView(String layoutName) {
-        try {
-            int layout_id = EzXHelper.getAppContext().getResources().getIdentifier(layoutName,
-                    "layout", EzXHelper.getAppContext().getPackageName());
-            return layoutInflater.inflate(layout_id, null);
-        } catch (Exception e) {
-            Log.e(e, "fail to getLayoutView");
-        }
-        return null;
-    }
-
     /**
      * 移除父子控件的连接
      *
      * @param view
      */
-    private void removeParent(View view) {
+    private static void removeParent(View view) {
         if (view != null && view.getParent() != null) {
             ((ViewGroup) (view.getParent())).removeView(view);
         }
+    }
+
+    private static void initView(View view) {
+        if (view == null) {
+            return;
+        }
+        view.setId(0);
+        view.setVisibility(View.VISIBLE);
+
+        if (view instanceof TextView) {
+            ((TextView) view).setText("");
+        } else if (view instanceof LinearLayout) {
+            LinearLayout linearLayout = (LinearLayout) view;
+            for (int i = 0; i < linearLayout.getChildCount(); i++) {
+                initView(linearLayout.getChildAt(i));
+            }
+        }
+
     }
 
     public static class CategoryLinearLayoutBuilder {
@@ -170,6 +250,11 @@ public class ViewHelper {
                 linearLayout = viewHelper.getCategoryItem();
             }
         }
+
+        public CategoryLinearLayoutBuilder(Context context) {
+            this(ViewHelper.newInstance(context));
+        }
+
 
         public LinearLayout build() {
             if (viewHelper == null) {
@@ -186,6 +271,28 @@ public class ViewHelper {
                 linearLayout.addView(viewHelper.getLineItem());
             }
             return this;
+        }
+
+        public CategoryLinearLayoutBuilder addSwitchItem(int id, String text) {
+            return viewHelper != null ?
+                    addItem(viewHelper.getSwitchItem(id, text)) : this;
+
+        }
+
+        public CategoryLinearLayoutBuilder addArrowItem(int id, String text) {
+            return viewHelper != null ?
+                    addItem(viewHelper.getArrowItem(id, text)) : this;
+
+        }
+
+        public CategoryLinearLayoutBuilder addArrowAndStateItem(int titleId, String titleText, int stateId, String stateText) {
+            return viewHelper != null ?
+                    addItem(viewHelper.getArrowAndStateItem(titleId, titleText, stateId, stateText)) : this;
+        }
+
+        public CategoryLinearLayoutBuilder addSectionItem(int id, String text) {
+            return viewHelper != null ?
+                    addItem(viewHelper.getSectionItem(id, text)) : this;
         }
     }
 

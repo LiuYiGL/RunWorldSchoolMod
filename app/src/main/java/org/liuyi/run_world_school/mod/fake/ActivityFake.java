@@ -2,8 +2,10 @@ package org.liuyi.run_world_school.mod.fake;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.github.kyuubiran.ezxhelper.Log;
@@ -18,24 +20,34 @@ public abstract class ActivityFake {
     private boolean isLayoutInit;
     private LinearLayout layoutContent;
     private TextView tvTitle;
+    private ScrollView scrollView;
 
     public void fakeActivity(Activity activity) {
         this.activity = activity;
+        ViewGroup root = activity.findViewById(android.R.id.content);
         if (!isInit) {
             layoutContent = new LinearLayout(activity);
+            layoutContent.setOrientation(LinearLayout.VERTICAL);
+            scrollView = new ScrollView(activity);
+            scrollView.addView(layoutContent);
+            ((LinearLayout) root.getChildAt(0)).addView(scrollView, 1);
             initActivity();
         } else {
-            ((ViewGroup) layoutContent.getParent()).removeView(layoutContent);
+            if (scrollView.getParent() != null) {
+                ((ViewGroup) scrollView.getParent()).removeView(scrollView);
+            }
+            ((LinearLayout) root.getChildAt(0)).addView(scrollView, 1);
         }
-        ViewGroup root = activity.findViewById(android.R.id.content);
-        ((LinearLayout) root.getChildAt(0)).addView(layoutContent, 1);
+        setTitle(getTitle());
     }
 
-    public abstract void startActivity();
+    protected abstract void startActivity();
 
-    public abstract void initActivity();
+    protected abstract void initActivity();
 
-    public abstract void initLayout();
+    protected abstract void initLayout();
+
+    protected abstract String getTitle();
 
     public boolean isLayoutInit() {
         return isLayoutInit;
@@ -54,18 +66,23 @@ public abstract class ActivityFake {
     }
 
     public void setTitle(String title) {
-        if (tvTitle == null && activity != null) {
+        if (activity != null) {
             try {
-                tvTitle = (TextView) ViewUtils.INSTANCE.findViewByIdName(activity, "title");
+                TextView textView = (TextView) ViewUtils.INSTANCE.findViewByIdName(activity, "title");
+                assert textView != null;
+                textView.setText(title);
             } catch (Exception e) {
                 Log.e(e, "fail to set title, may be due to activity");
             }
         }
-        if (tvTitle != null) {
-            tvTitle.setText(title);
-        }
     }
 
+    public <T extends View> T findViewById(int id) {
+        if (activity != null) {
+            return activity.findViewById(id);
+        }
+        return null;
+    }
 
     public TextView getTvTitle() {
         return tvTitle;

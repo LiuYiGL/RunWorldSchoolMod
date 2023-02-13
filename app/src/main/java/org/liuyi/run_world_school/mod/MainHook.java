@@ -35,6 +35,8 @@ public class MainHook implements IXposedHookLoadPackage, IXposedHookZygoteInit {
 
                 SettingActivityHook.INSTANCE.init().hook();
                 AboutUsActivityHook.INSTANCE.init().hook();
+
+
             } catch (Exception e) {
                 Log.e(e, "Use mod is failed");
             }
