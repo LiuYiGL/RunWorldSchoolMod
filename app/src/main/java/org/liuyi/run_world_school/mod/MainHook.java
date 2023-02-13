@@ -8,9 +8,6 @@ import com.github.kyuubiran.ezxhelper.HookFactory;
 import com.github.kyuubiran.ezxhelper.Log;
 import com.github.kyuubiran.ezxhelper.finders.MethodFinder;
 
-import org.liuyi.run_world_school.mod.hook.base.AboutUsActivityHook;
-import org.liuyi.run_world_school.mod.hook.base.SettingActivityHook;
-
 import java.lang.reflect.Method;
 import java.util.Objects;
 
@@ -31,12 +28,19 @@ public class MainHook implements IXposedHookLoadPackage, IXposedHookZygoteInit {
                 EzXHelper.initHandleLoadPackage(lpparam);
                 EzXHelper.setLogTag(TAG);
                 EzXHelper.setToastTag(TAG);
-                initAppContext();
 
-                SettingActivityHook.INSTANCE.init().hook();
-                AboutUsActivityHook.INSTANCE.init().hook();
+                Method attach = MethodFinder.fromClass(Application.class).filterByName("attach").first();
+                HookFactory.createMethodHook(attach, hookFactory -> {
+                    hookFactory.after(methodHookParam -> {
+                        if (methodHookParam.args[0] instanceof Context) {
+                            EzXHelper.setAppContext((Context) methodHookParam.args[0]);
+                            Log.d("Success to initAppContext", null);
 
-
+                            HookManager hookManager = HookManager.getInstance((Context) methodHookParam.args[0]);
+                            hookManager.putBaseHook(null);
+                        }
+                    });
+                });
             } catch (Exception e) {
                 Log.e(e, "Use mod is failed");
             }
@@ -47,20 +51,4 @@ public class MainHook implements IXposedHookLoadPackage, IXposedHookZygoteInit {
     public void initZygote(StartupParam startupParam) throws Throwable {
         EzXHelper.initZygote(startupParam);
     }
-
-    /**
-     * 初始化获取AppContext
-     */
-    private void initAppContext() {
-        Method attach = MethodFinder.fromClass(Application.class).filterByName("attach").first();
-        HookFactory.createMethodHook(attach, hookFactory -> {
-            hookFactory.after(methodHookParam -> {
-                if (methodHookParam.args[0] instanceof Context) {
-                    EzXHelper.setAppContext((Context) methodHookParam.args[0]);
-                    Log.d("Success to initAppContext", null);
-                }
-            });
-        });
-    }
-
 }

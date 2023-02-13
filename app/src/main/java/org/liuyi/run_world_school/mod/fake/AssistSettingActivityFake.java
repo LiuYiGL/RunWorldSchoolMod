@@ -1,6 +1,7 @@
 package org.liuyi.run_world_school.mod.fake;
 
 import android.annotation.SuppressLint;
+import android.content.SharedPreferences;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
@@ -11,7 +12,8 @@ import android.widget.Toast;
 import com.github.kyuubiran.ezxhelper.Log;
 import com.github.kyuubiran.ezxhelper.misc.AndroidUtils;
 
-import org.liuyi.run_world_school.mod.Constant;
+import org.liuyi.run_world_school.mod.Constant.*;
+import org.liuyi.run_world_school.mod.HookManager;
 import org.liuyi.run_world_school.mod.utils.ViewHelper;
 
 @SuppressLint({"StaticFieldLeak", "UseSwitchCompatOrMaterialCode"})
@@ -35,6 +37,8 @@ public class AssistSettingActivityFake extends ActivityFake implements CompoundB
     private LinearLayout llOpenSource;
     private TextView tvWeChatAppreciation;
 
+    private HookManager hookManager;
+    private SharedPreferences sPref;
 
     /**
      * 负责绑定控件和监听
@@ -57,7 +61,15 @@ public class AssistSettingActivityFake extends ActivityFake implements CompoundB
         tvWeChatAppreciation = findViewById(ID.WECHAT_APPRECIATION);
 
         // TODO: 2023/2/13 初始化状态
-
+        swAssistSupport.setChecked(sPref.getBoolean(HookPrefKey.ASSIST_SUPPORT_HOOK_KEY, false));
+        tvRunModeState.setText(RunMode.getText(sPref.getInt(HookPrefKey.RUN_MODE_OPT_KEY, 0)));
+        swRunValidTime.setChecked(sPref.getBoolean(HookPrefKey.RUN_VALID_TIME_HOOK_KEY, false));
+        swLocationCheck.setChecked(sPref.getBoolean(HookPrefKey.LOCATION_CHECK_HOOK_KEY, false));
+        swPointCheck.setChecked(sPref.getBoolean(HookPrefKey.POINT_CHECK_HOOK_KEY, false));
+        swAdSplash.setChecked(sPref.getBoolean(HookPrefKey.AD_SPLASH_HOOK_KEY, false));
+        swAdActivity.setChecked(sPref.getBoolean(HookPrefKey.AD_ACTIVITY_HOOK_KEY, false));
+        swAdDialog.setChecked(sPref.getBoolean(HookPrefKey.AD_DIALOG_HOOK_KEY, false));
+        swForceCancelDialog.setChecked(sPref.getBoolean(HookPrefKey.FORCE_CANCEL_DIALOG_HOOK_KEY, false));
 
         // 设置监听
         swAssistSupport.setOnCheckedChangeListener(this);
@@ -84,13 +96,13 @@ public class AssistSettingActivityFake extends ActivityFake implements CompoundB
             if (!isLayoutInit()) {
                 initLayout();
             }
-
-
+            hookManager = HookManager.getInstance(getActivity());
+            sPref = hookManager.getsPref();
+            setInit(true);
+            startActivity();
         } catch (Exception e) {
             Log.e(e, "");
         }
-        setInit(true);
-        startActivity();
     }
 
     /**
@@ -158,6 +170,7 @@ public class AssistSettingActivityFake extends ActivityFake implements CompoundB
         String key = ID.getKey(id);
         if (key != null && !key.isEmpty()) {
             AndroidUtils.showToast(getActivity(), key + ": " + isChecked, Toast.LENGTH_SHORT);
+            hookManager.setHookState(key, isChecked);
         }
     }
 
@@ -168,25 +181,25 @@ public class AssistSettingActivityFake extends ActivityFake implements CompoundB
 
     enum ID {
         PLACEHOLDER("占位", "placeholder"),
-        ASSIST_SUPPORT("辅助总开关", Constant.HookPrefKey.ASSIST_SUPPORT_HOOK_KEY),
+        ASSIST_SUPPORT("辅助总开关", HookPrefKey.ASSIST_SUPPORT_HOOK_KEY),
         USE_GUISE("使用须知", ""),
-        RUN_MODE("跑步模式", Constant.HookPrefKey.RUN_MODE_HOOK_KEY),
-        RUM_MODE_STATE("默认", Constant.HookPrefKey.RUN_MODE_OPT_KEY),
-        RUN_VALID_TIME("取消夜间跑步限制", Constant.HookPrefKey.RUN_VALID_TIME_HOOK_KEY),
-        LOCATION_CHECK("关闭定位信息检测", Constant.HookPrefKey.LOCATION_CHECK_HOOK_KEY),
-        POINT_CHECK("关闭点位信息检测", Constant.HookPrefKey.POINT_CHECK_HOOK_KEY),
-        AD_SPLASH("取消开屏广告", Constant.HookPrefKey.AD_SPLASH_HOOK_KEY),
-        AD_ACTIVITY("取消广告Activity", Constant.HookPrefKey.AD_ACTIVITY_HOOK_KEY),
-        AD_DIALOG("取消弹窗广告", Constant.HookPrefKey.AD_DIALOG_HOOK_KEY),
-        FORCE_CANCEL_DIALOG("支持返回取消弹窗", Constant.HookPrefKey.FORCE_CANCEL_DIALOG_HOOK_KEY),
+        RUN_MODE("跑步模式", HookPrefKey.RUN_MODE_HOOK_KEY),
+        RUM_MODE_STATE("默认", HookPrefKey.RUN_MODE_OPT_KEY),
+        RUN_VALID_TIME("取消夜间跑步限制", HookPrefKey.RUN_VALID_TIME_HOOK_KEY),
+        LOCATION_CHECK("关闭定位信息检测", HookPrefKey.LOCATION_CHECK_HOOK_KEY),
+        POINT_CHECK("关闭点位信息检测", HookPrefKey.POINT_CHECK_HOOK_KEY),
+        AD_SPLASH("取消开屏广告", HookPrefKey.AD_SPLASH_HOOK_KEY),
+        AD_ACTIVITY("取消广告Activity", HookPrefKey.AD_ACTIVITY_HOOK_KEY),
+        AD_DIALOG("取消弹窗广告", HookPrefKey.AD_DIALOG_HOOK_KEY),
+        FORCE_CANCEL_DIALOG("支持返回取消弹窗", HookPrefKey.FORCE_CANCEL_DIALOG_HOOK_KEY),
         CONTACT_AUTHOR("作者主页", ""),
         OPEN_SOURCES("开源仓库", ""),
         COOLAPK("酷安", ""),
         GITHUB("GitHub", ""),
         WECHAT_APPRECIATION("微信赞赏", "");
 
-        private String text;
-        private String key;
+        private final String text;
+        private final String key;
 
         ID(String text, String key) {
             this.text = text;
