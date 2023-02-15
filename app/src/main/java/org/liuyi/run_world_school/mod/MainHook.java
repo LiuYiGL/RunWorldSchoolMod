@@ -8,6 +8,15 @@ import com.github.kyuubiran.ezxhelper.HookFactory;
 import com.github.kyuubiran.ezxhelper.Log;
 import com.github.kyuubiran.ezxhelper.finders.MethodFinder;
 
+import org.liuyi.run_world_school.mod.hook.extend.AdActivityHook;
+import org.liuyi.run_world_school.mod.hook.extend.AdDialogHook;
+import org.liuyi.run_world_school.mod.hook.extend.AdSplashHook;
+import org.liuyi.run_world_school.mod.hook.extend.ForceCancelDialogHook;
+import org.liuyi.run_world_school.mod.hook.extend.LocationCheckHook;
+import org.liuyi.run_world_school.mod.hook.extend.PointCheckHook;
+import org.liuyi.run_world_school.mod.hook.extend.RunModeHook;
+import org.liuyi.run_world_school.mod.hook.extend.RunValidTimeHook;
+
 import java.lang.reflect.Method;
 import java.util.Objects;
 
@@ -22,13 +31,13 @@ public class MainHook implements IXposedHookLoadPackage, IXposedHookZygoteInit {
 
 
     @Override
-    public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
+    public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) {
         if (Objects.equals(lpparam.packageName, PKG_NAME)) {
             try {
                 EzXHelper.initHandleLoadPackage(lpparam);
                 EzXHelper.setLogTag(TAG);
                 EzXHelper.setToastTag(TAG);
-
+                Log.i("进入运动世界校园", null);
                 Method attach = MethodFinder.fromClass(Application.class).filterByName("attach").first();
                 HookFactory.createMethodHook(attach, hookFactory -> {
                     hookFactory.after(methodHookParam -> {
@@ -37,7 +46,15 @@ public class MainHook implements IXposedHookLoadPackage, IXposedHookZygoteInit {
                             Log.d("Success to initAppContext", null);
 
                             HookManager hookManager = HookManager.getInstance((Context) methodHookParam.args[0]);
-                            hookManager.putBaseHook(null);
+                            hookManager.putBaseHook(
+                                    RunValidTimeHook.INSTANCE,
+                                    LocationCheckHook.INSTANCE,
+                                    PointCheckHook.INSTANCE,
+                                    AdSplashHook.INSTANCE,
+                                    AdActivityHook.INSTANCE,
+                                    AdDialogHook.INSTANCE,
+                                    ForceCancelDialogHook.INSTANCE,
+                                    RunModeHook.INSTANCE);
                         }
                     });
                 });

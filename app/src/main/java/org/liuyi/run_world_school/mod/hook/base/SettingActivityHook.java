@@ -5,10 +5,8 @@ import android.content.Intent;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.github.kyuubiran.ezxhelper.ClassUtils;
 import com.github.kyuubiran.ezxhelper.EzXHelper;
 import com.github.kyuubiran.ezxhelper.HookFactory;
-import com.github.kyuubiran.ezxhelper.Log;
 import com.github.kyuubiran.ezxhelper.finders.MethodFinder;
 import com.github.kyuubiran.ezxhelper.misc.ViewUtils;
 
@@ -23,21 +21,6 @@ public class SettingActivityHook extends BaseHook {
 
     public static final BaseHook INSTANCE = new SettingActivityHook();
     private static final String targetClazzName = "com.zjwh.android_wh_physicalfitness.activity.mine.SettingActivity";
-
-    @Override
-    public BaseHook init() {
-        if (!isInit()) {
-            try {
-                Class<?> aClass = ClassUtils.loadFirstClass(targetClazzName);
-                Method onCreate = MethodFinder.fromClass(aClass).filterByName("onCreate").first();
-                setTargetMethod(onCreate);
-                setInit(true);
-            } catch (Exception e) {
-                Log.e(e, getClassName() + " can not be init");
-            }
-        }
-        return INSTANCE;
-    }
 
     @Override
     public Consumer<HookFactory> hookFactoryConsumer() {
@@ -71,5 +54,15 @@ public class SettingActivityHook extends BaseHook {
     @Override
     public String getPrefKey() {
         return null;
+    }
+
+    @Override
+    public String getTargetClazzName() {
+        return targetClazzName;
+    }
+
+    @Override
+    public Method getTargetMethod(MethodFinder methodFinder) {
+        return methodFinder.filterByName("onCreate").first();
     }
 }

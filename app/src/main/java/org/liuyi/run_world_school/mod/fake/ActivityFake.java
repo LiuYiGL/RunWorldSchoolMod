@@ -39,6 +39,7 @@ public abstract class ActivityFake {
             ((LinearLayout) root.getChildAt(0)).addView(scrollView, 1);
         }
         setTitle(getTitle());
+        restoreState();
     }
 
     protected abstract void startActivity();
@@ -108,4 +109,5 @@ public abstract class ActivityFake {
         isInit = init;
     }
 
+    public abstract void restoreState();
 }

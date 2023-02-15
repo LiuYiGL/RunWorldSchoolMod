@@ -1,22 +1,22 @@
-package org.liuyi.run_world_school.mod.hook.base;
+package org.liuyi.run_world_school.mod.hook.extend;
 
 import android.app.Activity;
-import android.content.Intent;
 
 import com.github.kyuubiran.ezxhelper.HookFactory;
 import com.github.kyuubiran.ezxhelper.finders.MethodFinder;
 
-import org.liuyi.run_world_school.mod.fake.AssistSettingActivityFake;
+import org.liuyi.run_world_school.mod.Constant;
 import org.liuyi.run_world_school.mod.hook.BaseHook;
 
 import java.lang.reflect.Method;
-import java.util.Objects;
 import java.util.function.Consumer;
 
-public class AboutUsActivityHook extends BaseHook {
+public class AdActivityHook extends BaseHook {
 
-    public static BaseHook INSTANCE = new AboutUsActivityHook();
-    private static final String targetClazzName = "com.zjwh.android_wh_physicalfitness.activity.mine.AboutUsActivity";
+    public static final BaseHook INSTANCE = new AdActivityHook();
+
+    private static final String targetClazzName = "com.zjwh.android_wh_physicalfitness.ui.AdActivity";
+    private static final String targetMethodName = "onCreate";
 
 
     @Override
@@ -25,11 +25,8 @@ public class AboutUsActivityHook extends BaseHook {
             hookFactory.after(methodHookParam -> {
                 if (methodHookParam.thisObject instanceof Activity) {
                     Activity activity = (Activity) methodHookParam.thisObject;
-                    Intent intent = activity.getIntent();
-                    String custom = intent.getStringExtra("custom");
-                    if (Objects.equals(custom, "AssistSetting")) {
-                        AssistSettingActivityFake.INSTANCE.fakeActivity(activity);
-                    }
+                    activity.finish();
+                    LogI(activity.getClass().getSimpleName() + "已关闭");
                 }
             });
         };
@@ -37,7 +34,7 @@ public class AboutUsActivityHook extends BaseHook {
 
     @Override
     public String getPrefKey() {
-        return null;
+        return Constant.HookPrefKey.AD_ACTIVITY_HOOK_KEY;
     }
 
     @Override
@@ -47,6 +44,6 @@ public class AboutUsActivityHook extends BaseHook {
 
     @Override
     public Method getTargetMethod(MethodFinder methodFinder) {
-        return methodFinder.filterByName("onCreate").first();
+        return methodFinder.filterByName(targetMethodName).first();
     }
 }

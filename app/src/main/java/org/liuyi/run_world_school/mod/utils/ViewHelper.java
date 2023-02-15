@@ -2,7 +2,7 @@ package org.liuyi.run_world_school.mod.utils;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.res.XmlResourceParser;
+import android.content.res.Resources;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,8 +16,6 @@ import com.github.kyuubiran.ezxhelper.misc.ViewUtils;
 import java.util.ArrayList;
 import java.util.Objects;
 
-import de.robv.android.xposed.XposedHelpers;
-
 @SuppressLint("DiscouragedApi")
 public class ViewHelper {
 
@@ -27,8 +25,9 @@ public class ViewHelper {
     private static final String activity_setting_layout_name = "activity_setting";
     private static final String activity_account_setting_layout_name = "activity_account_setting";
     public static final String arrowItemIdName = "tvAccountSetting";
-    private static Object activitySettingXmlBlockObj;
-    private static Object activityAccountSettingXmlBlockObj;
+    private static int activity_setting_layout_id;
+    private static int activity_account_setting_layout_id;
+    private static Resources resources;
 
     private static final ArrayList<TextView> arrowItemList = new ArrayList<>();
     private static final ArrayList<View> lineItemList = new ArrayList<>();
@@ -45,30 +44,19 @@ public class ViewHelper {
         ViewHelper viewHelper = new ViewHelper();
         viewHelper.layoutInflater = LayoutInflater.from(context);
         viewHelper.context = context;
-
         if (!isInit) {
-            int id1 = ViewUtils.getIdByName(activity_setting_layout_name, "layout", context);
-            XmlResourceParser layout1 = context.getResources().getLayout(id1);
-            activitySettingXmlBlockObj = XposedHelpers.getObjectField(layout1, "mBlock");
-
-            int id2 = ViewUtils.getIdByName(activity_account_setting_layout_name, "layout", context);
-            XmlResourceParser layout2 = context.getResources().getLayout(id2);
-            activityAccountSettingXmlBlockObj = XposedHelpers.getObjectField(layout2, "mBlock");
+            resources = context.getResources();
+            activity_setting_layout_id = ViewUtils.getIdByName(activity_setting_layout_name, "layout", context);
+            activity_account_setting_layout_id = ViewUtils.getIdByName(activity_account_setting_layout_name, "layout", context);
             isInit = true;
         }
         return viewHelper;
     }
 
-    private XmlResourceParser getXmlResourceParser(Object obj) {
-        if (obj.getClass().getName().equals("android.content.res.XmlBlock")) {
-            return (XmlResourceParser) XposedHelpers.callMethod(obj, "newParser");
-        }
-        return null;
-    }
 
     private void divideViewFromActivitySettingLayout() {
         try {
-            ViewGroup layoutView = (ViewGroup) layoutInflater.inflate(getXmlResourceParser(activitySettingXmlBlockObj), null);
+            ViewGroup layoutView = (ViewGroup) layoutInflater.inflate(resources.getLayout(activity_setting_layout_id), null);
             ViewUtils.INSTANCE.findAllViewsByCondition(layoutView, view -> {
                         if (view instanceof TextView) {
                             return ((TextView) view).getCompoundDrawables()[2] != null;
@@ -151,7 +139,7 @@ public class ViewHelper {
     public synchronized LinearLayout getCategoryItem() {
         LinearLayout res = null;
         try {
-            View view = layoutInflater.inflate(getXmlResourceParser(activitySettingXmlBlockObj), null);
+            View view = layoutInflater.inflate(resources.getLayout(activity_setting_layout_id), null);
             assert view != null;
             res = (LinearLayout) (Objects.requireNonNull(ViewUtils.INSTANCE.findViewByIdName(view, arrowItemIdName)).getParent());
             res.removeAllViews();
@@ -165,7 +153,7 @@ public class ViewHelper {
     public synchronized LinearLayout getArrowAndStateItem(int titleId, String titleText, int stateId, String stateText) {
         LinearLayout res = null;
         try {
-            View view = layoutInflater.inflate(getXmlResourceParser(activityAccountSettingXmlBlockObj), null);
+            View view = layoutInflater.inflate(resources.getLayout(activity_account_setting_layout_id), null);
             assert view != null;
             res = (LinearLayout) ViewUtils.INSTANCE.findViewByIdName(view, "llWX");
             assert res != null;
@@ -186,25 +174,13 @@ public class ViewHelper {
         return res;
     }
 
-    public synchronized TextView getSectionItem(int id, String text) {
+    public TextView getSectionItem(int id, String text) {
         TextView res = null;
         try {
-            View layoutView = layoutInflater.inflate(getXmlResourceParser(activityAccountSettingXmlBlockObj), null);
-            assert layoutView != null;
-            res = ViewUtils.INSTANCE.findViewByConditionAs((ViewGroup) layoutView,
-                    view -> {
-                        if (view instanceof TextView) {
-                            String s = (String) ((TextView) view).getText();
-                            return s.equals("账号绑定");
-                        }
-                        return false;
-                    });
-            assert res != null;
+            res = new TextView(context);
             res.setId(id);
             res.setText(text);
-            ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) res.getLayoutParams();
-            params.setMargins(0, params.topMargin / 2, 0, params.bottomMargin / 2);
-            removeParent(res);
+            res.setPadding(50, 10, 10, 10);
         } catch (Exception e) {
             Log.e(e, "fail to getSectionItem");
         }
